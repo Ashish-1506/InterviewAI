@@ -1,0 +1,39 @@
+node_modules
+dist
+build
+.vite
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!.env.sample
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.venv
+venv
+.DS_Store
+coverage
+*.log
+
+# Local application data and generated artifacts
+backend/uploads/
+fastapi/data/faiss_index/
+*.sqlite
+*.db
+
+# IDE and operating-system files
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+
+# Certificates, keys, and private credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt

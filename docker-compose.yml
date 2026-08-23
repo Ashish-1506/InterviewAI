@@ -1,0 +1,113 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000/api}
+      VITE_FASTAPI_BASE_URL: ${VITE_FASTAPI_BASE_URL:-http://localhost:8000}
+      VITE_FASTAPI_WS_BASE_URL: ${VITE_FASTAPI_WS_BASE_URL:-ws://localhost:8000}
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - node-api
+    restart: unless-stopped
+    networks:
+      - interviewai
+
+  node-api:
+    build:
+      context: ./backend
+    command: npm run dev
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-4000}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/interviewai}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4000}
+      FASTAPI_PARSE_URL: ${FASTAPI_PARSE_URL:-http://fastapi:8000}
+      BACKEND_INTERNAL_BASE_URL: ${BACKEND_INTERNAL_BASE_URL:-http://node-api:4000}
+      UPLOADS_DIR: ${UPLOADS_DIR:-uploads}
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - interviewai
+
+  fastapi:
+    build:
+      context: ./fastapi
+    env_file:
+      - ./fastapi/.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: ${APP_NAME:-InterviewAI AI Services}
+      APP_ENV: ${APP_ENV:-development}
+      APP_HOST: ${APP_HOST:-0.0.0.0}
+      APP_PORT: ${APP_PORT:-8000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:4000}
+      BACKEND_INTERNAL_BASE_URL: ${BACKEND_INTERNAL_BASE_URL:-http://node-api:4000}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/interviewai}
+      MONGODB_DB: ${MONGODB_DB:-interviewai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      STT_PROVIDER: ${STT_PROVIDER:-whisper}
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      # Browser speech is the fast local default. Set TTS_PROVIDER=coqui to
+      # explicitly enable the server-side Coqui model.
+      TTS_PROVIDER: ${TTS_PROVIDER:-none}
+      COQUI_MODEL: ${COQUI_MODEL:-tts_models/en/ljspeech/tacotron2-DDC}
+      COQUI_GPU: ${COQUI_GPU:-false}
+      SCORING_WEIGHTS_JSON: ${SCORING_WEIGHTS_JSON:-}
+      CODE_EVAL_WORKSPACE: /code-eval
+      CODE_EVAL_DOCKER_VOLUME: ${CODE_EVAL_DOCKER_VOLUME:-interviewai_code_eval_workspace}
+    volumes:
+      - ./fastapi:/app
+      # Required only for the isolated local code-execution feature. Do not expose
+      # this service publicly without an authenticated, dedicated runner service.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - code_eval_workspace:/code-eval
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - interviewai
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - interviewai
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  frontend_node_modules:
+  backend_node_modules:
+  code_eval_workspace:
+    name: ${CODE_EVAL_DOCKER_VOLUME:-interviewai_code_eval_workspace}
+
+networks:
+  interviewai:
+    driver: bridge

@@ -1,0 +1,94 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_FASTAPI_BASE_URL: /ai
+        VITE_FASTAPI_WS_BASE_URL: /ai
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      node-api:
+        condition: service_healthy
+      fastapi:
+        condition: service_healthy
+    restart: unless-stopped
+
+  node-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${APP_ORIGIN}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
+      FASTAPI_PARSE_URL: http://fastapi:8000
+      BACKEND_INTERNAL_BASE_URL: http://node-api:4000
+      UPLOADS_DIR: uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile.prod
+    environment:
+      APP_ENV: production
+      CORS_ORIGINS: ${APP_ORIGIN}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DB: ${MONGODB_DB:-interviewai}
+      BACKEND_INTERNAL_BASE_URL: http://node-api:4000
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-pro}
+      QUESTION_BANK_PATH: /app/data/question_bank.json
+      FAISS_INDEX_PATH: /app/data/faiss_index
+      STT_PROVIDER: ${STT_PROVIDER:-whisper}
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      TTS_PROVIDER: ${TTS_PROVIDER:-coqui}
+      COQUI_MODEL: ${COQUI_MODEL:-tts_models/en/ljspeech/tacotron2-DDC}
+      COQUI_GPU: ${COQUI_GPU:-false}
+      SCORING_WEIGHTS_JSON: ${SCORING_WEIGHTS_JSON:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  uploads_data:

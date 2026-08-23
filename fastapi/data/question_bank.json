@@ -1,0 +1,32 @@
+{
+  "questions": [
+    {
+      "id": "hr_star_1",
+      "mode": "HR",
+      "category": "HR-behavioral",
+      "tags": ["communication"],
+      "difficulty": "medium",
+      "question": "Tell me about a time you had to resolve a conflict in a team. Describe the situation, your task, the actions you took, and the result."
+    },
+    {
+      "id": "tech_dsa_1",
+      "mode": "Technical",
+      "category": "DSA",
+      "tags": ["arrays", "two-pointers"],
+      "difficulty": "easy",
+      "question": "Given an array of integers, find the longest contiguous subarray with sum equal to K. Implement a function longest_subarray_sum_k(arr, k) returning the maximum length (0 if none).",
+      "problemSpec": {
+        "language": "python",
+        "entrypoint": "longest_subarray_sum_k",
+        "hiddenTests": [
+          {"input": {"args": [[1, 2, 3, 1, 1, 1, 2], 3]}, "expected": 3},
+          {"input": {"args": [[-1, 2, 3, -2, 4, -3, 1], 3]}, "expected": 4},
+          {"input": {"args": [[5, 5, 5, 5], 10]}, "expected": 2},
+          {"input": {"args": [[0, 0, 0, 0], 0]}, "expected": 4},
+          {"input": {"args": [[1, 2], 100]}, "expected": 0}
+        ]
+      }
+    }
+  ]
+}
+
