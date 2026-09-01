@@ -1,8 +1,24 @@
 # InterviewAI
 
-InterviewAI is an AI-assisted interview preparation platform. Users can create
-an account, upload a resume, choose an HR or technical interview, answer
-questions in text or by voice, and review a generated performance report.
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+
+Practicing interviews alone is hard — you don't know what a real interviewer
+would ask, and there's no one to score your answers. **InterviewAI** is a
+resume-aware mock interview platform that generates HR and technical questions
+based on your actual resume, runs the interview in real time over voice or
+text, evaluates your code in an isolated runner, and gives you a performance
+report at the end — so you can prepare the way you'd actually be interviewed.
+
+## Demo
+
+| Dashboard | Technical Interview |
+| --- | --- |
+| ![Dashboard](assets/dashboard.png) | ![Technical Interview](assets/technical.png) |
 
 ## Features
 
@@ -25,6 +41,19 @@ questions in text or by voice, and review a generated performance report.
 | Node API | Node.js, Express, Mongoose, JWT | Authentication, users, resumes, and interview sessions | `http://localhost:4000` |
 | AI service | Python, FastAPI, Pydantic | Resume parsing, interviewer engine, voice, emotion, scoring, reports, and code evaluation | `http://localhost:8000` |
 | Database | MongoDB 7 | Users, interview sessions, conversations, and reports | `mongodb://localhost:27017` |
+
+```mermaid
+flowchart LR
+    User(["Browser"]) -- HTTP/JWT --> Frontend["React + Vite\n(localhost:5173)"]
+    Frontend -- REST --> NodeAPI["Node API\nExpress + Mongoose\n(localhost:4000)"]
+    Frontend -- WebSocket --> AIService["AI Service\nFastAPI\n(localhost:8000)"]
+    NodeAPI -- Auth, Users, Resumes, Sessions --> MongoDB[("MongoDB 7")]
+    AIService -- Conversations, Reports --> MongoDB
+    AIService -- LangChain --> LLM["OpenAI / Gemini"]
+    AIService -- Speech-to-Text --> Whisper["Whisper"]
+    AIService -- Text-to-Speech --> Coqui["Coqui TTS"]
+    AIService -- Question Bank --> FAISS[("FAISS Index")]
+```
 
 The AI service uses LangChain with OpenAI or Google Gemini, FAISS for the
 question-bank index, Whisper for speech-to-text, and Coqui TTS when server-side
@@ -153,6 +182,11 @@ data/       Question bank and FAISS index under fastapi/
 docker-compose.yml       Local development stack
 docker-compose.prod.yml  Production-oriented container stack
 ```
+
+## Contributing
+
+Issues and pull requests are welcome. If you'd like to propose a larger
+change, please open an issue first to discuss what you'd like to change.
 
 ## Author
 
